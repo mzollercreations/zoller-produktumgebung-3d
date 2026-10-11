@@ -31,6 +31,7 @@ UI = json.loads((ROOT / "tools" / "i18n.json").read_text(encoding="utf-8"))
 sys.path.insert(0, str(SRC / "tools"))
 import flags as web_flags  # noqa: E402  Flaggen der Länderseiten
 import i18n as web_i18n  # noqa: E402  feste Texte der Webseite (u. a. Unterkategorien)
+import names as web_names  # noqa: E402  Produktnamen der maschinellen Übersetzung (»titanium« -> »titan«)
 
 # Schaltflächen und Teaser, die nicht in die Produkttexte gehören (alle Sprachen)
 CTA = {"1:1 Expertengespräch", "Jetzt kaufen", "Jetzt anfragen", "Paketvergleich", "Mehr erfahren", "Angebot anfordern",
@@ -117,13 +118,14 @@ class Locale:
 
     # ---------------------------------------------------------------- Hilfen
     def t(self, s):
-        """Text übersetzen: unübersetzte Reste (translations.json der Webseite), sonst unverändert."""
+        """Text übersetzen: unübersetzte Reste (translations.json der Webseite), Ersetzungen (replace.json) und
+        Produktnamen (tools/names.py der Webseite) wie auf der Länderseite."""
         if not isinstance(s, str):
             return s
         s = self.tr.get(s.strip(), s)
         for a, b in self.reps.items():
             s = s.replace(a, b)
-        return s
+        return web_names.fix(s, self.lang)
 
     def ui(self, s):
         return UI[self.lang].get(s, s)
