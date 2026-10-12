@@ -35,9 +35,17 @@ WEB = "https://mzollercreations.github.io/zoller-webseite"   # eigene Webseite (
 WEB_DOCS = SRC / "docs"
 
 
+RENAMES_DE = json.loads((SRC / "content" / "renames.json").read_text(encoding="utf-8")).get("de", {})
+
+
 def web(path):
-    """Link auf die eigene ZOLLER-Webseite; nur falls die Seite dort fehlt, auf zoller.info."""
+    """Link auf die eigene ZOLLER-Webseite; nur falls die Seite dort fehlt, auf zoller.info.
+    Umbenannte deutsche Adressen (content/renames.json, »de«) zeigen gleich auf die neue Adresse."""
     clean_path = "/" + path.strip("/")
+    for old, new in RENAMES_DE.items():
+        if clean_path == old or clean_path.startswith(old + "/"):
+            clean_path = new + clean_path[len(old):]
+            break
     if (WEB_DOCS / clean_path.strip("/") / "index.html").exists():
         return f"{WEB}{clean_path}/"
     return SITE + clean_path
