@@ -1,6 +1,6 @@
 # Zoller Produktumgebung 3D
 
-Ein begehbarer 3D-Showroom mit **allen 59 Produkten von [zoller.info](https://www.zoller.info/produkte)**, sortiert nach den sieben Themenwelten der Produktübersicht.
+Ein begehbarer 3D-Showroom mit **allen 59 Produkten von [zoller.info](https://www.zoller.info/produkte) plus »idChip«** (60, eigene Seite der Webseite), sortiert nach den sieben Themenwelten der Produktübersicht.
 
 **Live:** https://mzollercreations.github.io/zoller-produktumgebung-3d/
 

@@ -139,6 +139,8 @@ PRODUCTS = [
     ("redomatic", f"{P}/schrumpftechnik/redomatic", "schrumpftechnik", "Schrumpfgeräte", "machine", 1.95, "csm_redomatic_preview_"),
     # Werkzeugaufnahmen
     ("tooling", f"{P}/werkzeugaufnahmen", "werkzeugaufnahmen", "Tooling Solutions", "vitrine", 1.15, "csm_ToolingSolutions4_preview_"),
+    # »idChip« (2026-10-12): eigene Seite der Webseite (zoller-webseite/tools/idchip.py), Freisteller eines Halters mit Chip
+    ("idchip", f"{P}/werkzeugaufnahmen/idchip", "werkzeugaufnahmen", "Tooling Solutions", "pedestal", 0.5, "zoller_idchip_werkzeughalter"),
     # Wuchttechnik
     ("toolbalancer", f"{P}/wuchttechnik/toolbalancer", "wuchttechnik", "Wuchtmaschinen", "machine", 1.9, "csm_toolBalancer_preview_"),
 ]
