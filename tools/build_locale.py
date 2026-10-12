@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Erzeugt die Sprachfassungen der Produktumgebung 3D für die Länderseiten (Kanada EN/FR, Mexiko ES, USA EN).
+"""Erzeugt die Sprachfassungen der Produktumgebung 3D für alle Länderseiten (content/sites.json der Webseite).
 
 Quelle sind die Länderfassungen im Projekt ``zoller-webseite`` (content/sites/<sprachpfad>/, siehe dort
 content/sites.json). Aufbau der Halle, Produktbilder und Reihenfolge kommen aus der deutschen Fassung
@@ -42,6 +42,50 @@ CTA = {"1:1 Expertengespräch", "Jetzt kaufen", "Jetzt anfragen", "Paketvergleic
 MORE = ("Mehr erfahren", "Learn more", "Read more", "En savoir plus", "Más información", "Leer más")
 TEASER_HREFS = ("myzoller.com", "/expert", "kontakt", "contact", "contacto", "ihr-erfolg", "your-success",
                 "votre-reussite", "su-exito", "academy", "academie", "academia")
+# Weitere Sprachen: Knöpfe und »Mehr erfahren« der Länderfassungen von zoller.info und die festen Texte der Webseite
+MORE += ("Scopri di più", "Per saperne di più", "Saber mais", "Saiba mais", "Läs mer", "Dowiedz się więcej", "Więcej o tym",
+         "Več informacij", "Več o tem", "Zjistěte více", "Více informací", "További információk", "Zistiť viac",
+         "Viac informácií", "了解更多", "詳細はこちら", "詳しく見る", "자세히 알아보기", "자세히 보기", "Подробнее",
+         "Daha fazla bilgi")
+CTA |= set(MORE) | {
+    "Richiedi ora", "Fissa subito un appuntamento", "Acquista ora", "Solicitar agora", "Solicite agora", "Marque agora uma consulta",
+    "Agende uma conversa agora", "Encontrar um contacto", "Entrar em contato", "Begär information nu", "Fråga nu", "Begär offert nu",
+    "Köp nu", "Zapytaj teraz", "Kup teraz", "Umów się na wizytę już teraz", "Pošljite povpraševanje", "Prikaži izdelke",
+    "Določite termin zdaj", "Zahtevajte zdaj", "Požádat o informace", "Požádat o nabídku", "Koupit nyní", "Kérjen ajánlatot most",
+    "Kérjen most", "Termékek megtekintése", "Vásároljon most", "Most foglaljon időpontot", "Požiadať o informácie",
+    "Požiadať teraz", "Požiadajte o informácie", "Kúpiť teraz", "立即咨询", "立即预约", "立即购买", "查找联系人", "显示产品",
+    "今すぐお問い合わせください", "今すぐお問い合わせ", "製品を見る", "今すぐ予約する", "지금 문의하기", "제품 보기",
+    "지금 예약하기", "1:1 전문가 상담", "지금 구매하기",
+    "Отправить запрос", "Запросить", "Купить", "Встреча с экспертом 1:1", "Беседа с экспертом 1:1", "Связаться с нами",
+    "Сравнение пакетов", "Записаться на демонстрацию", "Показать продукты", "Hemen bilgi isteyin", "Hemen talep edin",
+    "Hemen satın alın", "1:1 uzman görüşmesi", "Hemen bizimle iletişime geçin", "Paket karşılaştırması", "Teklif isteyin",
+    "Demo randevusu alın", "Ürünleri göster"}
+for _lang, _texts in web_i18n.T.items():
+    CTA |= {_texts[k] for k in ("Jetzt anfragen", "Mehr erfahren", "Jetzt kaufen", "Kontakt aufnehmen") if k in _texts}
+
+
+TR_SKIP = {"src", "href", "id", "ftype", "bg", "space", "pos", "type", "kind", "path", "url", "de_path", "src_path",
+           "og_image", "value", "tag", "date", "lat", "lng", "languages", "breadcrumb"}
+
+
+def tr_nodes(obj, tr, skip=TR_SKIP):
+    """Wie translate() in tools/build.py der Webseite: ganze Texte oder Textstellen zwischen HTML-Tags ersetzen."""
+    if isinstance(obj, dict):
+        return {k: (v if k in skip else tr_nodes(v, tr, skip)) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [tr_nodes(v, tr, skip) for v in obj]
+    if not isinstance(obj, str) or not obj.strip():
+        return obj
+
+    def node(t, in_html):
+        k = html.unescape(t).strip()
+        if k not in tr or tr[k] == k:
+            return t
+        lead, trail = t[:len(t) - len(t.lstrip())], t[len(t.rstrip()):]
+        return lead + (html.escape(tr[k], quote=False) if in_html else tr[k]) + trail
+    if "<" in obj and re.search(r"<[a-zA-Z/][^>]*>", obj):
+        return re.sub(r"(?<=>)([^<]+)(?=<)", lambda m: node(m.group(1), True), ">" + obj + "<")[1:-1]
+    return node(obj, False)
 
 
 def clean(s):
@@ -108,6 +152,8 @@ class Locale:
                 self.loc2de[p["path"]] = p["de_path"]
         tr_file = folder / "translations.json"
         self.tr = json.loads(tr_file.read_text(encoding="utf-8")) if tr_file.exists() else {}
+        if self.tr:   # Textstellen zwischen HTML-Tags vorab übersetzen, wie tools/build.py der Webseite (geklonte Fassungen, z. B. ru/tr)
+            self.pages = {k: tr_nodes(v, self.tr) for k, v in self.pages.items()}
         self.reps = {}   # Ersetzungen in Texten, z. B. »génie« -> »genius« (auch aus dem Overlay der Länderseite)
         overlay = [SRC / "content" / "sites" / loc["overlay"]] if loc.get("overlay") else []
         for rep_file in [f / "replace.json" for f in [folder] + overlay]:
@@ -120,6 +166,7 @@ class Locale:
         self.nav = json.loads((folder / "nav.json").read_text(encoding="utf-8"))
         self.files = [SRC / site["out"], SRC / "docs"]   # gespiegelte Dateien der Länderseite, sonst der deutschen
         self.copied = {}
+        self.teaser = TEASER_HREFS + tuple(self.de2loc[d] for d in ("/ihr-erfolg", "/akademie", "/unternehmen/kontakt") if d in self.de2loc)
 
     # ---------------------------------------------------------------- Hilfen
     def t(self, s):
@@ -139,7 +186,7 @@ class Locale:
         return s
 
     def ui(self, s):
-        return UI[self.lang].get(s, s)
+        return UI.get(self.lang, {}).get(s, s)
 
     def local(self, href):
         """/ca/products/… -> /products/…"""
@@ -201,7 +248,7 @@ class Locale:
             if typ == "textmedia":
                 hs = [(l, T(h)) for l, h in headings(b.get("header"))]
                 ps = [T(x) for x in paragraphs(b.get("body"))]
-                imgs = [i for i in b.get("images", []) if not any(k in (i.get("href") or "") for k in TEASER_HREFS)
+                imgs = [i for i in b.get("images", []) if not any(k in urllib.parse.unquote(i.get("href") or "") for k in self.teaser)
                         and "teaser" not in (i.get("src") or "").lower()]
                 if hs and not d["headline"] and not hdr:
                     h1 = [h for lvl, h in hs if lvl in ("1", "2")]
@@ -255,7 +302,7 @@ class Locale:
                 continue
             for b in iter_blocks(self.pages[lp]["blocks"]):
                 for i in b.get("images", []) if b.get("type") == "textmedia" else []:
-                    if not i.get("title") or any(k in (i.get("href") or "") for k in TEASER_HREFS):
+                    if not i.get("title") or any(k in urllib.parse.unquote(i.get("href") or "") for k in self.teaser):
                         continue
                     cap = i.get("caption") or ""
                     text = without_more(" ".join(T(x) for x in paragraphs(re.sub(r"<h[1-6][^>]*>.*?</h[1-6]>", "", cap))))
@@ -314,13 +361,23 @@ class Locale:
         de_tools = [o["label"] for o in de_plist["filters"].get("tool", [])]
         loc_tools = [self.t(o["label"]) for o in plist.get("filters", {}).get("tool", [])]
         tool_map = dict(zip(de_tools, loc_tools)) if len(de_tools) == len(loc_tools) else {}
+        if tool_map:
+            TOOL_MAPS.setdefault(self.lang, tool_map)
+        else:   # Filterliste dieser Fassung unvollständig: Werkzeugtypen einer anderen Fassung derselben Sprache
+            tool_map = TOOL_MAPS.get(self.lang, {})
         tool_name = lambda t: tool_map.get(t, t)
-        sub_name = lambda s: web_i18n.T[self.lang].get(s, s)
+        sub_name = lambda s: web_i18n.T.get(self.lang, {}).get(s, s)
 
         products = []
         for p in de_data["products"]:
             info = self.extract(p["path"])
-            if info is None:
+            fb = FALLBACK.get(p["id"], {}).get(self.lang)
+            if info is None and fb:
+                # Seite fehlt auf zoller.info in dieser Sprache: eigene Kurzinfo (tools/software_fallback.json), Bilder ohne Texte
+                info = {"title": p["name"], "headline": p.get("headline", ""), "claim": fb["claim"], "intro": [fb["intro"]],
+                        "sections": [], "highlights": fb["highlights"], "features": [], "gallery": [dict(g, title="", text="") for g in p.get("gallery", [])],
+                        "header_img": None, "links": [], "shop": None, "specs": [], "models": [], "teaser": fb["teaser"]}
+            elif info is None:
                 print(f"   {self.dir}: keine Seite für {p['id']} ({p['path']}) – deutsche Texte bleiben")
                 info = {"title": p["name"], "headline": p.get("headline", ""), "claim": p.get("claim", ""), "intro": p.get("intro", []),
                         "sections": [], "highlights": [], "features": [], "gallery": [], "header_img": None,
@@ -334,8 +391,8 @@ class Locale:
             e = dict(p)
             e.update({
                 "name": name, "badge": p.get("badge"), "sub": sub_name(p["sub"]),
-                "url": self.web_de(p["path"]) or self.base_url, "claim": nv.get("claim") or info["claim"] or info["headline"],
-                "teaser": nv.get("desc") or list_text.get(p["path"], ""), "headline": info["headline"], "intro": info["intro"],
+                "url": self.web_de(p["path"]) or (EN_INT.web_de(p["path"]) if fb else None) or self.web_de("/unternehmen/kontakt") or self.base_url, "claim": nv.get("claim") or info["claim"] or info["headline"],
+                "teaser": nv.get("desc") or list_text.get(p["path"], "") or info.get("teaser", ""), "headline": info["headline"], "intro": info["intro"],
                 "sections": info["sections"], "highlights": info["highlights"][:4], "features": info["features"],
                 "models": info["models"][:10], "specs": info["specs"], "gallery": info["gallery"], "links": info["links"],
                 "shop": info["shop"], "header": info["header_img"] or p.get("header"),
@@ -355,7 +412,7 @@ class Locale:
             nv = nav_info.get(f"/produkte/{c['id']}", {})
             lp = self.de2loc.get(f"/produkte/{c['id']}")
             name = nv.get("label") or (clean_name(self.t(self.pages[lp]["title"])) if lp else c["name"])
-            categories.append(dict(c, name=name, text=cat_text.get(c["id"], c["text"]),
+            categories.append(dict(c, name=name, text=cat_text.get(c["id"]) or web_i18n.T.get(self.lang, {}).get(c["text"], c["text"]),
                                    url=self.web_de(f"/produkte/{c['id']}") or self.base_url, subs=[sub_name(s) for s in c["subs"]]))
         return {"generated_from": f"zoller-webseite/content/sites/{self.loc['src']}", "site": self.base_url,
                 "contact": self.web_de("/unternehmen/kontakt") or self.base_url,
@@ -368,7 +425,7 @@ class Locale:
         s = s.replace('"./assets/vendor/', '"../assets/vendor/')
         s = s.replace("https://mzollercreations.github.io/zoller-webseite/produkte/", self.web_de("/produkte") or self.base_url)
         s = s.replace("https://mzollercreations.github.io/zoller-webseite/", self.base_url)
-        texts = UI[self.lang]
+        texts = UI.get(self.lang, {})
         s = re.sub(r'\b(title|aria-label|placeholder|content)="([^"]+)"', lambda m: f'{m.group(1)}="{texts.get(m.group(2), m.group(2))}"', s)
         s = re.sub(r">([^<>]+)<", lambda m: ">" + texts.get(m.group(1), m.group(1)) + "<", s)
         js = {k: v for k, v in texts.items()}
@@ -378,6 +435,9 @@ class Locale:
 
 
 SITES = json.loads((SRC / "content" / "sites.json").read_text(encoding="utf-8"))
+EN_INT = None
+TOOL_MAPS = {}   # Sprache -> {deutscher Werkzeugtyp: Übersetzung}, aus der ersten Fassung mit vollständiger Filterliste
+FALLBACK = json.loads((ROOT / "tools" / "software_fallback.json").read_text(encoding="utf-8"))
 
 
 def lang_menu(page, code, base):
@@ -408,17 +468,19 @@ def main():
     de_data = json.loads((DOCS / "data" / "products.json").read_text(encoding="utf-8"))
     de_index = DOCS / "index.html"
     de_index.write_text(with_version(lang_menu(de_index.read_text(encoding="utf-8"), "de-DE", "")), encoding="utf-8")
-    for sid, site in sites.items():
-        for loc in site["locales"]:
-            if not loc["src"]:
-                continue
-            L = Locale(site, loc)
-            out = DOCS / L.dir
-            (out / "data").mkdir(parents=True, exist_ok=True)
-            data = L.build(de_data)
-            (out / "data" / "products.json").write_text(json.dumps(data, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
-            (out / "index.html").write_text(L.index_html(), encoding="utf-8")
-            print(f"{L.dir}: {len(data['products'])} Produkte, {len(L.copied)} Bilder, Webseite {L.base_url}")
+    global EN_INT   # internationale englische Fassung: Ziel für Produkte ohne Seite in der Landessprache
+    EN_INT = next(Locale(s_, l_) for s_ in sites.values() for l_ in s_["locales"] if l_["src"] == "en_DE" and not l_.get("overlay"))
+    order = [(site, loc) for site in sites.values() for loc in site["locales"] if loc["src"]]
+    for site, loc in order:   # Werkzeugtypen je Sprache vorab sammeln (TOOL_MAPS)
+        Locale(site, loc).build(de_data)
+    for site, loc in order:
+        L = Locale(site, loc)
+        out = DOCS / L.dir
+        (out / "data").mkdir(parents=True, exist_ok=True)
+        data = L.build(de_data)
+        (out / "data" / "products.json").write_text(json.dumps(data, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+        (out / "index.html").write_text(L.index_html(), encoding="utf-8")
+        print(f"{L.dir}: {len(data['products'])} Produkte, {len(L.copied)} Bilder, Webseite {L.base_url}")
 
 
 if __name__ == "__main__":

@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>ZOLLER 3D 产品世界</title>
+  <meta name="description" content="所有 ZOLLER 产品尽在可漫游的 3D 展厅，按主题世界分类：预调和测量、刀具管理、检测和测量、自动化、刀具热缩技术、刀柄以及刀具平衡技术。">
+  <meta name="theme-color" content="#e7e9ec">
+  <meta property="og:title" content="ZOLLER 3D 产品世界">
+  <meta property="og:description" content="所有 ZOLLER 产品尽在可漫游的 3D 展厅，按主题世界分类。">
+  <meta property="og:image" content="https://mzollercreations.github.io/zoller-produktumgebung-3d/assets/img/vorschau.jpg">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="../assets/img/favicon.ico">
+  <link rel="stylesheet" href="../assets/css/app.css?v=e190af527d">
+  <script type="importmap">{ "imports": { "three": "../assets/vendor/three.module.min.js" } }</script>
+</head>
+<body>
+  <div class="app is-loading" id="app">
+    <canvas id="scene" class="scene" aria-label="包含所有 ZOLLER 产品的 3D 展厅"></canvas>
+    <div class="vignette" aria-hidden="true"></div>
+
+    <header class="topbar">
+      <a class="brand" href="https://mzollercreations.github.io/zoller-china/" aria-label="返回 ZOLLER 网站" title="返回 ZOLLER 网站">
+        <img src="../assets/img/zoller.svg" alt="ZOLLER" width="132" height="30">
+      </a>
+      <div class="brand__title">
+        <strong>产品世界 <span class="tag3d">3D</span></strong>
+        <span id="stats">展厅</span>
+      </div>
+
+      <div class="tools">
+        <div class="search" id="search-wrap">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          <input id="search" type="search" placeholder="搜索产品 …" autocomplete="off" aria-label="搜索产品" aria-controls="search-results" aria-expanded="false" role="combobox">
+          <kbd class="kbd" aria-hidden="true">/</kbd>
+          <ul class="search__results" id="search-results" role="listbox" hidden></ul>
+        </div>
+        <label class="select" title="哪些设备适合您的刀具类型？">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16l-6 7v6l-4 2v-8z"/></svg>
+          <select id="tooltype" aria-label="按刀具类型筛选"><option value="">所有刀具类型</option></select>
+        </label>
+        <div class="seg" role="group" aria-label="视图">
+          <button class="btn-icon" id="btn-overview" type="button" title="总览 (H)" aria-label="总览">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11 12 4l9 7"/><path d="M5 10v10h14V10"/></svg><span>总览</span>
+          </button>
+          <button class="btn-icon" id="btn-tour" type="button" title="自动导览 (T)" aria-label="开始导览">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg><span>导览</span>
+          </button>
+          <button class="btn-icon" id="btn-walk" type="button" title="步行漫游展厅 (G)" aria-label="漫游" aria-pressed="false">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="13" cy="4.5" r="2"/><path d="m9 21 2.5-6.5L14 17v4M7 12l3-4.5 4 1 2.5 3.5M11.5 14.5 10 8"/></svg><span>漫游</span>
+          </button>
+          <button class="btn-icon" id="btn-help" type="button" title="操作 (?)" aria-label="操作帮助">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.2a2.6 2.6 0 0 1 5 .9c0 1.8-2.5 2.2-2.5 3.9"/><circle cx="12" cy="17.3" r=".6" fill="currentColor"/></svg>
+          </button>
+        </div>
+        <button class="lang-btn" id="btn-lang" type="button" title="选择国家和语言" aria-label="选择国家和语言" aria-haspopup="dialog">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.8 3 2.8 15 0 18M12 3c-2.8 3-2.8 15 0 18"/></svg><!--lang-flag--><svg class="flag" viewBox="0 0 30 20" width="30" height="20" aria-hidden="true"><path fill="#ee1c25" d="M0 0h30v20H0z"/><path fill="#ffff00" d="M5.00 2.00L5.67 4.07L7.85 4.07L6.09 5.35L6.76 7.43L5.00 6.15L3.24 7.43L3.91 5.35L2.15 4.07L4.33 4.07zM9.14 2.51L9.62 1.97L9.25 1.34L9.91 1.63L10.39 1.08L10.33 1.80L11.00 2.09L10.29 2.25L10.22 2.97L9.85 2.35zM11.01 4.14L11.66 3.82L11.56 3.10L12.07 3.62L12.72 3.30L12.38 3.95L12.88 4.47L12.17 4.34L11.83 4.99L11.73 4.27zM11.04 6.73L11.76 6.70L11.96 6.00L12.21 6.68L12.94 6.66L12.37 7.10L12.62 7.79L12.01 7.38L11.44 7.83L11.64 7.13zM9.22 8.38L9.90 8.63L10.35 8.06L10.32 8.79L11.00 9.05L10.30 9.24L10.26 9.96L9.87 9.36L9.16 9.55L9.62 8.98z"/></svg><!--/lang-flag-->
+        </button>
+      </div>
+    </header>
+
+    <nav class="dock" id="dock" aria-label="主题世界">
+      <div class="dock__head">
+        <span>主题世界</span>
+        <button class="dock__toggle" id="dock-toggle" type="button" aria-expanded="true" aria-label="展开/收起主题世界">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 15 6-6 6 6"/></svg>
+        </button>
+      </div>
+      <ol class="dock__list" id="dock-list"></ol>
+    </nav>
+
+    <div class="minimap" id="minimap-wrap">
+      <canvas id="minimap" width="220" height="220" aria-label="展厅平面图 – 单击即可飞往该处"></canvas>
+      <span class="minimap__label">平面图</span>
+    </div>
+
+    <div class="tooltip" id="tooltip" role="status" aria-live="polite"></div>
+
+    <div class="filterbar" id="filterbar" hidden>
+      <span id="filter-text"></span>
+      <button type="button" id="filter-clear" class="chip chip--dark">清除筛选 ×</button>
+    </div>
+
+    <aside class="panel" id="panel" aria-hidden="true" aria-labelledby="panel-title" role="dialog">
+      <div class="panel__bar">
+        <button type="button" class="round" id="panel-prev" aria-label="上一个产品" title="上一个产品 (←)"><svg viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg></button>
+        <span class="panel__pos" id="panel-pos"></span>
+        <button type="button" class="round" id="panel-next" aria-label="下一个产品" title="下一个产品 (→)"><svg viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg></button>
+        <button type="button" class="round round--close" id="panel-close" aria-label="关闭" title="关闭 (Esc)"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+      </div>
+      <div class="panel__scroll" id="panel-body"></div>
+    </aside>
+
+    <div class="tourbar" id="tourbar" hidden>
+      <div class="tourbar__progress"><i id="tour-progress"></i></div>
+      <div class="tourbar__row">
+        <span class="tourbar__badge">导览</span>
+        <span class="tourbar__now" id="tour-now"></span>
+        <button type="button" class="round round--sm" id="tour-prev" aria-label="返回"><svg viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg></button>
+        <button type="button" class="round round--sm round--yellow" id="tour-play" aria-label="暂停"><svg viewBox="0 0 24 24"><path d="M8 5h3v14H8zM13 5h3v14h-3z"/></svg></button>
+        <button type="button" class="round round--sm" id="tour-next" aria-label="下一个"><svg viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg></button>
+        <button type="button" class="round round--sm" id="tour-stop" aria-label="结束导览"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+      </div>
+    </div>
+
+    <div class="walkhint" id="walkhint" hidden>
+      <strong>漫游模式</strong>
+      <span>您正以视线高度在展厅中漫游</span>
+      <button type="button" class="chip chip--dark" id="walk-exit">退出</button>
+    </div>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+    <div class="controls" id="controls">
+      <div class="zoom" role="group" aria-label="缩放">
+        <button type="button" class="zoom__btn" id="zoom-in" aria-label="放大" title="放大 (+)"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+        <button type="button" class="zoom__btn" id="zoom-out" aria-label="缩小" title="缩小 (−)"><svg viewBox="0 0 24 24"><path d="M5 12h14"/></svg></button>
+      </div>
+      <section class="legend" id="legend" aria-label="操作">
+        <button type="button" class="legend__head" id="legend-toggle" aria-expanded="true">
+          <span class="legend__title"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="3" width="10" height="18" rx="5"/><path d="M12 7v3"/></svg>操作</span>
+          <svg class="legend__chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+        </button>
+        <ul class="legend__list legend--orbit only-desktop-list">
+          <li><i class="m m--left" aria-hidden="true"></i><span><b>拖动</b> – 旋转展厅</span></li>
+          <li><i class="m m--wheel" aria-hidden="true"></i><span><b>滚动</b> – 朝鼠标指针缩放</span></li>
+          <li><i class="m m--right" aria-hidden="true"></i><span><b>右键拖动</b> 或 <kbd>⇧</kbd> + 拖动 – 平移</span></li>
+          <li><i class="m m--left" aria-hidden="true"></i><span><b>单击</b> – 打开产品 · <b>双击</b> – 放大</span></li>
+          <li class="legend__keys"><kbd>+</kbd><kbd>−</kbd> 缩放 <kbd>←</kbd><kbd>→</kbd> 产品 <kbd>G</kbd> 漫游</li>
+        </ul>
+        <ul class="legend__list legend--walk only-desktop-list">
+          <li><span class="k"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></span><span>行走 · <kbd>⇧</kbd> 加速</span></li>
+          <li><span class="k"><kbd>Q</kbd><kbd>E</kbd></span><span>转向 (也可用 <kbd>←</kbd><kbd>→</kbd>)</span></li>
+          <li><i class="m m--left" aria-hidden="true"></i><span><b>拖动</b> – 环顾四周</span></li>
+          <li><i class="m m--left" aria-hidden="true"></i><span><b>单击地面</b> – 走过去</span></li>
+          <li class="legend__keys"><kbd>G</kbd> 或 <kbd>Esc</kbd> 结束漫游</li>
+        </ul>
+        <ul class="legend__list legend--orbit only-touch-list">
+          <li><i class="f f--1" aria-hidden="true"></i><span><b>滑动</b> – 旋转展厅</span></li>
+          <li><i class="f f--2" aria-hidden="true"></i><span><b>双指缩放</b> – 缩放</span></li>
+          <li><i class="f f--2" aria-hidden="true"></i><span><b>双指拖动</b> – 平移</span></li>
+          <li><i class="f f--1" aria-hidden="true"></i><span><b>轻触</b> – 打开产品</span></li>
+        </ul>
+        <ul class="legend__list legend--walk only-touch-list">
+          <li><i class="f f--1" aria-hidden="true"></i><span><b>滑动</b> – 环顾四周</span></li>
+          <li><i class="f f--1" aria-hidden="true"></i><span><b>轻触地面</b> – 走过去</span></li>
+          <li><i class="f f--2" aria-hidden="true"></i><span><b>双指缩放</b> – 前进 / 后退</span></li>
+        </ul>
+      </section>
+    </div>
+
+    <div class="help" id="help" hidden role="dialog" aria-labelledby="help-title">
+      <div class="help__card">
+        <button type="button" class="round round--close help__close" id="help-close" aria-label="关闭"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+        <h2 id="help-title">如何在展厅中移动</h2>
+        <p class="help__lead">所有 ZOLLER 产品分布在七个主题世界中，环绕着带有 ZOLLER 标志的中央广场。</p>
+        <div class="help__grid">
+          <section>
+            <h3>鼠标</h3>
+            <ul>
+              <li><b>拖动</b> – 旋转展厅</li>
+              <li><b>右键 / ⇧ + 拖动</b> – 平移</li>
+              <li><b>滚动 / 触控板双指缩放</b> – 朝鼠标指针缩放</li>
+              <li><b>双击地面</b> – 放大</li>
+              <li><b>单击产品</b> – 飞过去并查看详情</li>
+              <li><b>单击指示牌</b> – 前往主题世界</li>
+            </ul>
+          </section>
+          <section>
+            <h3>键盘</h3>
+            <ul>
+              <li><kbd>+</kbd> <kbd>−</kbd> – 缩放</li>
+              <li><kbd>←</kbd> <kbd>→</kbd> – 上一个 / 下一个产品</li>
+              <li><kbd>1</kbd>–<kbd>7</kbd> – 主题世界</li>
+              <li><kbd>H</kbd> – 总览 · <kbd>T</kbd> – 导览</li>
+              <li><kbd>G</kbd> – 漫游 · <kbd>/</kbd> – 搜索</li>
+              <li><kbd>Esc</kbd> – 关闭 / 返回</li>
+            </ul>
+          </section>
+          <section>
+            <h3>漫游</h3>
+            <ul>
+              <li><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> – 行走， <kbd>Q</kbd><kbd>E</kbd> – 转向</li>
+              <li><b>拖动</b> – 环顾四周</li>
+              <li><b>单击地面</b> – 走过去</li>
+              <li><b>Touch</b>：轻触行走，双指前进/后退</li>
+            </ul>
+          </section>
+        </div>
+        <p class="help__note">地面上的黄线标示展区范围，无法越过。每个产品都链接到其在以下网站上的页面： <a href="https://mzollercreations.github.io/zoller-china/产品/">ZOLLER 网站</a>.</p>
+      </div>
+    </div>
+
+    <div class="help langs" id="langs" hidden role="dialog" aria-modal="true" aria-labelledby="langs-title">
+      <div class="help__card langs__card">
+        <button type="button" class="round round--close help__close" id="langs-close" aria-label="关闭"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+        <h2 id="langs-title">选择国家和语言</h2>
+        <p class="help__lead">展厅和产品链接将切换到所选国家的 ZOLLER 网站。</p>
+        <div class="langs__sites"><!--lang-sites--><a class="lang-site" href="../" hreflang="de-DE" lang="de"><svg class="flag" viewBox="0 0 5 3" width="33" height="20" aria-hidden="true"><path fill="#000" d="M0 0h5v1H0z"/><path fill="#d00" d="M0 1h5v1H0z"/><path fill="#ffce00" d="M0 2h5v1H0z"/></svg><span><b>Deutschland</b><small>Deutsch</small></span></a><a class="lang-site" href="../en/" hreflang="en" lang="en"><svg class="flag" viewBox="0 0 5 3" width="33" height="20" aria-hidden="true"><path fill="#000" d="M0 0h5v1H0z"/><path fill="#d00" d="M0 1h5v1H0z"/><path fill="#ffce00" d="M0 2h5v1H0z"/></svg><span><b>International</b><small>English</small></span></a><a class="lang-site" href="../en-ca/" hreflang="en-CA" lang="en"><svg class="flag" viewBox="0 0 9600 4800" width="40" height="20" aria-hidden="true"><path fill="#d52b1e" d="M0 0h9600v4800H0z"/><path fill="#fff" d="M2400 0h4800v4800H2400z"/><path fill="#d52b1e" d="m4890 4430-45-863a95 95 0 0 1 111-98l859 151-116-320a65 65 0 0 1 20-73l941-762-212-99a65 65 0 0 1-34-79l186-572-542 115a65 65 0 0 1-73-38l-105-247-423 454a65 65 0 0 1-111-57l204-1052-327 189a65 65 0 0 1-91-27l-332-652-332 652a65 65 0 0 1-91 27l-327-189 204 1052a65 65 0 0 1-111 57l-423-454-105 247a65 65 0 0 1-73 38l-542-115 186 572a65 65 0 0 1-34 79l-212 99 941 762a65 65 0 0 1 20 73l-116 320 859-151a95 95 0 0 1 111 98l-45 863z"/></svg><span><b>Canada</b><small>English</small></span></a><a class="lang-site" href="../fr-ca/" hreflang="fr-CA" lang="fr"><svg class="flag" viewBox="0 0 9600 4800" width="40" height="20" aria-hidden="true"><path fill="#d52b1e" d="M0 0h9600v4800H0z"/><path fill="#fff" d="M2400 0h4800v4800H2400z"/><path fill="#d52b1e" d="m4890 4430-45-863a95 95 0 0 1 111-98l859 151-116-320a65 65 0 0 1 20-73l941-762-212-99a65 65 0 0 1-34-79l186-572-542 115a65 65 0 0 1-73-38l-105-247-423 454a65 65 0 0 1-111-57l204-1052-327 189a65 65 0 0 1-91-27l-332-652-332 652a65 65 0 0 1-91 27l-327-189 204 1052a65 65 0 0 1-111 57l-423-454-105 247a65 65 0 0 1-73 38l-542-115 186 572a65 65 0 0 1-34 79l-212 99 941 762a65 65 0 0 1 20 73l-116 320 859-151a95 95 0 0 1 111 98l-45 863z"/></svg><span><b>Canada</b><small>Français</small></span></a><a class="lang-site" href="../es-mx/" hreflang="es-MX" lang="es"><svg class="flag" viewBox="0 0 21 12" width="35" height="20" aria-hidden="true"><path fill="#006847" d="M0 0h7v12H0z"/><path fill="#fff" d="M7 0h7v12H7z"/><path fill="#ce1126" d="M14 0h7v12h-7z"/><ellipse cx="10.5" cy="6" rx="1.7" ry="1.9" fill="#8c5a2b"/><path d="M8.9 7.2c.9 1 2.3 1 3.2 0" fill="none" stroke="#2e7d32" stroke-width=".45"/></svg><span><b>México</b><small>Español</small></span></a><a class="lang-site" href="../en-us/" hreflang="en-US" lang="en"><svg class="flag" viewBox="0 0 247 130" width="38" height="20" aria-hidden="true"><path fill="#b22234" d="M0 0h247v130H0z"/><path stroke="#fff" stroke-width="10" d="M0 15h247M0 35h247M0 55h247M0 75h247M0 95h247M0 115h247"/><path fill="#3c3b6e" d="M0 0h98.8v70H0z"/><path fill="none" stroke="#fff" stroke-width="4.6" stroke-linecap="round" stroke-dasharray="0 16.4" d="M8.2 7h82.1M16.4 14h65.7M8.2 21h82.1M16.4 28h65.7M8.2 35h82.1M16.4 42h65.7M8.2 49h82.1M16.4 56h65.7M8.2 63h82.1"/></svg><span><b>USA</b><small>English</small></span></a><a class="lang-site" href="../de-at/" hreflang="de-AT" lang="de"><svg class="flag" viewBox="0 0 3 2" width="30" height="20" aria-hidden="true"><path fill="#c8102e" d="M0 0h3v2H0z"/><path fill="#fff" d="M0 .667h3v.667H0z"/></svg><span><b>Österreich</b><small>Deutsch</small></span></a><a class="lang-site" href="../es-es/" hreflang="es-ES" lang="es"><svg class="flag" viewBox="0 0 750 500" width="30" height="20" aria-hidden="true"><path fill="#aa151b" d="M0 0h750v500H0z"/><path fill="#f1bf00" d="M0 125h750v250H0z"/></svg><span><b>España</b><small>Español</small></span></a><a class="lang-site" href="../fr-fr/" hreflang="fr-FR" lang="fr"><svg class="flag" viewBox="0 0 3 2" width="30" height="20" aria-hidden="true"><path fill="#002395" d="M0 0h1v2H0z"/><path fill="#fff" d="M1 0h1v2H1z"/><path fill="#ed2939" d="M2 0h1v2H2z"/></svg><span><b>France</b><small>Français</small></span></a><a class="lang-site" href="../pt-pt/" hreflang="pt-PT" lang="pt"><svg class="flag" viewBox="0 0 30 20" width="30" height="20" aria-hidden="true"><path fill="#da291c" d="M0 0h30v20H0z"/><path fill="#046a38" d="M0 0h12v20H0z"/><circle cx="12" cy="10" r="4.2" fill="none" stroke="#ffe900" stroke-width="1"/><path fill="#fff" d="M9.9 7.4h4.2v3.6a2.1 2.1 0 0 1-4.2 0z"/><path fill="#da291c" d="M10.4 7.9h3.2v3a1.6 1.6 0 0 1-3.2 0z"/></svg><span><b>Portugal</b><small>Português</small></span></a><a class="lang-site" href="../it-it/" hreflang="it-IT" lang="it"><svg class="flag" viewBox="0 0 3 2" width="30" height="20" aria-hidden="true"><path fill="#009246" d="M0 0h1v2H0z"/><path fill="#fff" d="M1 0h1v2H1z"/><path fill="#ce2b37" d="M2 0h1v2H2z"/></svg><span><b>Italia</b><small>Italiano</small></span></a><a class="lang-site" href="../sv-se/" hreflang="sv-SE" lang="sv"><svg class="flag" viewBox="0 0 16 10" width="32" height="20" aria-hidden="true"><path fill="#006aa7" d="M0 0h16v10H0z"/><path fill="#fecc00" d="M5 0h2v10H5zM0 4h16v2H0z"/></svg><span><b>Sverige</b><small>Svenska</small></span></a><a class="lang-site" href="../pl-pl/" hreflang="pl-PL" lang="pl"><svg class="flag" viewBox="0 0 8 5" width="32" height="20" aria-hidden="true"><path fill="#fff" d="M0 0h8v5H0z"/><path fill="#dc143c" d="M0 2.5h8v2.5H0z"/></svg><span><b>Polska</b><small>Polski</small></span></a><a class="lang-site" href="../sl-si/" hreflang="sl-SI" lang="sl"><svg class="flag" viewBox="0 0 12 6" width="40" height="20" aria-hidden="true"><path fill="#fff" d="M0 0h12v2H0z"/><path fill="#0000ff" d="M0 2h12v2H0z"/><path fill="#f00" d="M0 4h12v2H0z"/><path fill="#0000ff" stroke="#f00" stroke-width=".18" d="M2.3 1.1h2.2v1.3c0 .9-.6 1.3-1.1 1.6-.5-.3-1.1-.7-1.1-1.6z"/><path fill="#fff" d="m2.5 2.7.9-1 .9 1-.4.5h-1z"/></svg><span><b>Slovenija</b><small>Slovenščina</small></span></a><a class="lang-site" href="../cs-cz/" hreflang="cs-CZ" lang="cs"><svg class="flag" viewBox="0 0 6 4" width="30" height="20" aria-hidden="true"><path fill="#d7141a" d="M0 0h6v4H0z"/><path fill="#fff" d="M0 0h6v2H0z"/><path fill="#11457e" d="M0 0l3 2-3 2z"/></svg><span><b>Česko</b><small>Čeština</small></span></a><a class="lang-site" href="../hu-hu/" hreflang="hu-HU" lang="hu"><svg class="flag" viewBox="0 0 6 3" width="40" height="20" aria-hidden="true"><path fill="#ce2939" d="M0 0h6v1H0z"/><path fill="#fff" d="M0 1h6v1H0z"/><path fill="#477050" d="M0 2h6v1H0z"/></svg><span><b>Magyarország</b><small>Magyar</small></span></a><a class="lang-site" href="../sk-sk/" hreflang="sk-SK" lang="sk"><svg class="flag" viewBox="0 0 9 6" width="30" height="20" aria-hidden="true"><path fill="#fff" d="M0 0h9v2H0z"/><path fill="#0b4ea2" d="M0 2h9v2H0z"/><path fill="#ee1c25" d="M0 4h9v2H0z"/><path fill="#ee1c25" stroke="#fff" stroke-width=".15" d="M1.6 1.2h2.4v1.7c0 1-.7 1.5-1.2 1.8-.5-.3-1.2-.8-1.2-1.8z"/><path fill="#0b4ea2" d="M1.75 3.5c.3-.3.7-.3 1.05 0 .35-.3.75-.3 1.05 0-.2.6-.6.9-1.05 1.1-.45-.2-.85-.5-1.05-1.1z"/><path fill="#fff" d="M2.68 1.5h.24v1.9h-.24zM2.2 2h1.2v.22H2.2zM2.3 2.55h1v.22h-1z"/></svg><span><b>Slovensko</b><small>Slovenčina</small></span></a><a class="lang-site is-current" href="../zh-cn/" hreflang="zh-CN" lang="zh" aria-current=true><svg class="flag" viewBox="0 0 30 20" width="30" height="20" aria-hidden="true"><path fill="#ee1c25" d="M0 0h30v20H0z"/><path fill="#ffff00" d="M5.00 2.00L5.67 4.07L7.85 4.07L6.09 5.35L6.76 7.43L5.00 6.15L3.24 7.43L3.91 5.35L2.15 4.07L4.33 4.07zM9.14 2.51L9.62 1.97L9.25 1.34L9.91 1.63L10.39 1.08L10.33 1.80L11.00 2.09L10.29 2.25L10.22 2.97L9.85 2.35zM11.01 4.14L11.66 3.82L11.56 3.10L12.07 3.62L12.72 3.30L12.38 3.95L12.88 4.47L12.17 4.34L11.83 4.99L11.73 4.27zM11.04 6.73L11.76 6.70L11.96 6.00L12.21 6.68L12.94 6.66L12.37 7.10L12.62 7.79L12.01 7.38L11.44 7.83L11.64 7.13zM9.22 8.38L9.90 8.63L10.35 8.06L10.32 8.79L11.00 9.05L10.30 9.24L10.26 9.96L9.87 9.36L9.16 9.55L9.62 8.98z"/></svg><span><b>中国</b><small>简体中文</small></span></a><a class="lang-site" href="../ja-jp/" hreflang="ja-JP" lang="ja"><svg class="flag" viewBox="0 0 3 2" width="30" height="20" aria-hidden="true"><path fill="#fff" d="M0 0h3v2H0z"/><circle cx="1.5" cy="1" r=".6" fill="#bc002d"/></svg><span><b>日本</b><small>日本語</small></span></a><a class="lang-site" href="../ko-kr/" hreflang="ko-KR" lang="ko"><svg class="flag" viewBox="0 0 36 24" width="30" height="20" aria-hidden="true"><path fill="#fff" d="M0 0h36v24H0z"/><g transform="rotate(33.69 18 12)"><path fill="#cd2e3a" d="M12 12a6 6 0 0 1 12 0 3 3 0 0 1-6 0 3 3 0 0 0-6 0z"/><path fill="#0047a0" d="M12 12a3 3 0 0 1 6 0 3 3 0 0 0 6 0 6 6 0 0 1-12 0z"/></g><g fill="#000"><path transform="rotate(-56.31 6.5 5.2)" d="M4.5 4.1h4v.6h-4zM4.5 5h4v.6h-4zM4.5 5.9h4v.6h-4z"/><path transform="rotate(56.31 29.5 5.2)" d="M27.5 4.1h4v.6h-4zM27.5 5h4v.6h-4zM27.5 5.9h4v.6h-4z"/><path transform="rotate(56.31 6.5 18.8)" d="M4.5 17.7h4v.6h-4zM4.5 18.6h4v.6h-4zM4.5 19.5h4v.6h-4z"/><path transform="rotate(-56.31 29.5 18.8)" d="M27.5 17.7h4v.6h-4zM27.5 18.6h4v.6h-4zM27.5 19.5h4v.6h-4z"/></g></svg><span><b>대한민국</b><small>한국어</small></span></a><a class="lang-site" href="../en-in/" hreflang="en-IN" lang="en"><svg class="flag" viewBox="0 0 30 20" width="30" height="20" aria-hidden="true"><path fill="#ff9933" d="M0 0h30v6.67H0z"/><path fill="#fff" d="M0 6.67h30v6.66H0z"/><path fill="#138808" d="M0 13.33h30V20H0z"/><circle cx="15" cy="10" r="2.6" fill="none" stroke="#000080" stroke-width=".55"/><circle cx="15" cy="10" r=".6" fill="#000080"/></svg><span><b>India</b><small>English</small></span></a><a class="lang-site" href="../pt-br/" hreflang="pt-BR" lang="pt"><svg class="flag" viewBox="0 0 20 14" width="29" height="20" aria-hidden="true"><path fill="#009c3b" d="M0 0h20v14H0z"/><path fill="#ffdf00" d="M1.7 7 10 1.7 18.3 7 10 12.3z"/><circle cx="10" cy="7" r="3.5" fill="#002776"/><path fill="none" stroke="#fff" stroke-width=".55" d="M6.6 6.3c2.3-.6 4.9-.2 6.9 1.1"/></svg><span><b>Brasil</b><small>Português</small></span></a><a class="lang-site" href="../en-gb/" hreflang="en-GB" lang="en"><svg class="flag" viewBox="0 0 60 30" width="40" height="20" aria-hidden="true"><clipPath id="flag-gb-t"><path d="M30 15h30v15zv15H0zH0V0zV0h30z"/></clipPath><path fill="#012169" d="M0 0h60v30H0z"/><path stroke="#fff" stroke-width="6" d="M0 0l60 30m0-30L0 30"/><path stroke="#c8102e" stroke-width="4" clip-path="url(#flag-gb-t)" d="M0 0l60 30m0-30L0 30"/><path stroke="#fff" stroke-width="10" d="M30 0v30M0 15h60"/><path stroke="#c8102e" stroke-width="6" d="M30 0v30M0 15h60"/></svg><span><b>United Kingdom</b><small>English</small></span></a><a class="lang-site" href="../ru-ru/" hreflang="ru-RU" lang="ru"><svg class="flag" viewBox="0 0 9 6" width="30" height="20" aria-hidden="true"><path fill="#fff" d="M0 0h9v2H0z"/><path fill="#0039a6" d="M0 2h9v2H0z"/><path fill="#d52b1e" d="M0 4h9v2H0z"/></svg><span><b>Россия</b><small>Русский</small></span></a><a class="lang-site" href="../tr-tr/" hreflang="tr-TR" lang="tr"><svg class="flag" viewBox="0 0 1200 800" width="30" height="20" aria-hidden="true"><path fill="#e30a17" d="M0 0h1200v800H0z"/><circle cx="425" cy="400" r="200" fill="#fff"/><circle cx="475" cy="400" r="160" fill="#e30a17"/><polygon fill="#fff" points="503.3,400.0 558.6,382.0 558.6,323.9 592.7,370.9 648.0,353.0 613.9,400.0 648.0,447.0 592.7,429.1 558.6,476.1 558.6,418.0"/></svg><span><b>Türkiye</b><small>Türkçe</small></span></a><!--/lang-sites--></div>
+      </div>
+    </div>
+
+    <div class="loader" id="loader" role="status" aria-live="polite">
+      <svg class="loader__mark" viewBox="-60 -60 120 120" aria-hidden="true">
+        <circle class="loader__ring" r="27" />
+        <path class="loader__arms" d="M19 -19 L40 -40 M19 19 L40 40 M-19 19 L-40 40 M-19 -19 L-40 -40" />
+      </svg>
+      <div class="loader__title">3D 产品世界</div>
+      <div class="loader__bar"><i id="loader-bar"></i></div>
+      <div class="loader__text" id="loader-text">正在搭建展厅 …</div>
+    </div>
+
+    <section class="fallback" id="fallback" hidden aria-label="产品总览"></section>
+  </div>
+
+  <noscript><p style="padding:2rem;font-family:sans-serif">3D 产品世界需要 JavaScript。所有产品均可在以下网站查看： <a href="https://mzollercreations.github.io/zoller-china/产品/">ZOLLER 网站</a>.</p></noscript>
+  <script>window.ZI18N={"Zoller Produktumgebung 3D": "ZOLLER 3D 产品世界", "Produktumgebung ": "产品世界 ", "Showroom": "展厅", "Alle Werkzeugtypen": "所有刀具类型", "Übersicht": "总览", "Rundgang": "导览", "Begehen": "漫游", "Themenwelten": "主题世界", "Lageplan": "平面图", "Filter aufheben ×": "清除筛选 ×", "Begehen-Modus": "漫游模式", "Sie gehen in Augenhöhe durch die Halle": "您正以视线高度在展厅中漫游", "Beenden": "退出", "Steuerung": "操作", "Ziehen": "拖动", " – Halle drehen": " – 旋转展厅", "Scrollen": "滚动", " – zoomen, zum Mauszeiger hin": " – 朝鼠标指针缩放", "Rechts ziehen": "右键拖动", " oder ": " 或 ", " + Ziehen – verschieben": " + 拖动 – 平移", "Klick": "单击", " – Produkt öffnen · ": " – 打开产品 · ", "Doppelklick": "双击", " – heranzoomen": " – 放大", " Zoom ": " 缩放 ", " Produkte ": " 产品 ", " Begehen": " 漫游", "gehen · ": "行走 · ", " schneller": " 加速", "drehen (auch ": "转向 (也可用 ", " – umsehen": " – 环顾四周", "Klick auf den Boden": "单击地面", " – hingehen": " – 走过去", " beendet das Begehen": " 结束漫游", "Wischen": "滑动", "Zwei Finger spreizen": "双指缩放", " – zoomen": " – 缩放", "Zwei Finger schieben": "双指拖动", " – verschieben": " – 平移", "Tippen": "轻触", " – Produkt öffnen": " – 打开产品", "Tippen auf den Boden": "轻触地面", " – vor / zurück": " – 前进 / 后退", "So bewegen Sie sich durch die Halle": "如何在展厅中移动", "Alle ZOLLER-Produkte stehen in sieben Themenwelten rund um den zentralen Platz mit dem ZOLLER-Symbol.": "所有 ZOLLER 产品分布在七个主题世界中，环绕着带有 ZOLLER 标志的中央广场。", "Maus": "鼠标", "Rechtsklick / ⇧ + Ziehen": "右键 / ⇧ + 拖动", "Scrollen / Trackpad-Pinch": "滚动 / 触控板双指缩放", " – zoomen zum Mauszeiger": " – 朝鼠标指针缩放", "Doppelklick auf den Boden": "双击地面", "Klick auf Produkt": "单击产品", " – hinfliegen &amp; Details": " – 飞过去并查看详情", "Klick auf Schild": "单击指示牌", " – Themenwelt ansteuern": " – 前往主题世界", "Tastatur": "键盘", " – vorheriges / nächstes Produkt": " – 上一个 / 下一个产品", " – Themenwelt": " – 主题世界", " – Übersicht · ": " – 总览 · ", " – Rundgang": " – 导览", " – Begehen · ": " – 漫游 · ", " – Suche": " – 搜索", " – schließen / zurück": " – 关闭 / 返回", " – gehen, ": " – 行走， ", " – drehen": " – 转向", " – dorthin gehen": " – 走过去", ": tippen zum Gehen, zwei Finger vor/zurück": "：轻触行走，双指前进/后退", "Die gelbe Linie am Boden markiert den Ausstellungsbereich – weiter hinaus geht es nicht. Jedes Produkt verlinkt auf seine Seite der ": "地面上的黄线标示展区范围，无法越过。每个产品都链接到其在以下网站上的页面： ", "ZOLLER Webseite": "ZOLLER 网站", "Produktumgebung 3D": "3D 产品世界", "Showroom wird aufgebaut …": "正在搭建展厅 …", "Die Produktumgebung 3D benötigt JavaScript. Alle Produkte finden Sie auf der ": "3D 产品世界需要 JavaScript。所有产品均可在以下网站查看： ", "Alle ZOLLER-Produkte in einem begehbaren 3D-Showroom – sortiert nach Themenwelten: Einstellen & Messen, Toolmanagement, Prüfen & Messen, Automation, Schrumpftechnik, Werkzeugaufnahmen und Wuchttechnik.": "所有 ZOLLER 产品尽在可漫游的 3D 展厅，按主题世界分类：预调和测量、刀具管理、检测和测量、自动化、刀具热缩技术、刀柄以及刀具平衡技术。", "Alle ZOLLER-Produkte in einem begehbaren 3D-Showroom, sortiert nach Themenwelten.": "所有 ZOLLER 产品尽在可漫游的 3D 展厅，按主题世界分类。", "3D-Showroom mit allen ZOLLER-Produkten": "包含所有 ZOLLER 产品的 3D 展厅", "Zurück zur ZOLLER Webseite": "返回 ZOLLER 网站", "Produkt suchen …": "搜索产品 …", "Produkt suchen": "搜索产品", "Welche Geräte passen zu Ihrem Werkzeugtyp?": "哪些设备适合您的刀具类型？", "Nach Werkzeugtyp filtern": "按刀具类型筛选", "Ansicht": "视图", "Übersicht (H)": "总览 (H)", "Automatischer Rundgang (T)": "自动导览 (T)", "Rundgang starten": "开始导览", "Halle zu Fuß begehen (G)": "步行漫游展厅 (G)", "Steuerung (?)": "操作 (?)", "Hilfe zur Steuerung": "操作帮助", "Themenwelten ein-/ausklappen": "展开/收起主题世界", "Lageplan der Halle – klicken zum Hinfliegen": "展厅平面图 – 单击即可飞往该处", "Vorheriges Produkt": "上一个产品", "Vorheriges Produkt (←)": "上一个产品 (←)", "Nächstes Produkt": "下一个产品", "Nächstes Produkt (→)": "下一个产品 (→)", "Schließen": "关闭", "Schließen (Esc)": "关闭 (Esc)", "Zurück": "返回", "Pause": "暂停", "Weiter": "下一个", "Rundgang beenden": "结束导览", "Zoom": "缩放", "Hineinzoomen": "放大", "Hineinzoomen (+)": "放大 (+)", "Herauszoomen": "缩小", "Herauszoomen (−)": "缩小 (−)", "Produktübersicht": "产品总览", "Produkte": "款产品", "Produkt": "款产品", "Kein Produkt gefunden": "未找到产品", "{0}: {1} passende Lösung leuchtet in der Halle": "{0}：展厅中有 {1} 个匹配的解决方案亮起", "{0}: {1} passende Lösungen leuchten in der Halle": "{0}：展厅中有 {1} 个匹配的解决方案亮起", "Softwarepaket": "软件包", "Zur Produktseite": "产品页面", "Im Shop": "前往商店", "Anfragen": "咨询", "Kamera zum Produkt": "将镜头移至产品", "Im Raum zeigen": "在展厅中显示", "Direktlink kopieren": "复制直达链接", "Link": "链接", "Geeignet für": "适用于", "Auch zu finden unter": "另见", "Ausstattung & Merkmale": "配置与特点", "Modelle": "型号", "Technische Daten": "技术参数", "Tabellen": "个表格", "Mehr erfahren": "了解更多", "Bilder": "图片", "Weitere Seiten zum Produkt": "更多产品页面", "Alle Details auf der Produktseite:": "产品页面上的所有详情：", "Kopiert": "已复制", "Weiter abspielen": "继续播放", "Weiter heraus geht es nicht – Sie sehen die ganze Halle.": "无法再缩小 – 您已看到整个展厅。", "Rand der Ausstellung erreicht.": "已到达展区边缘。", "Hier endet der Ausstellungsbereich.": "展区到此为止。", "Ausgewählt": "已选择", "Klicken für Details": "单击查看详情", "Themenwelt ansteuern": "前往主题世界", "Hier sind alle Produkte als Übersicht – ein Klick öffnet die Details.": "这里是所有产品的总览 – 单击即可打开详情。", "Ihr Browser unterstützt kein WebGL, daher kann der 3D-Showroom nicht angezeigt werden.": "您的浏览器不支持 WebGL，因此无法显示 3D 展厅。", "Exponate werden aufgestellt …": "正在布置展品 …", "Der 3D-Showroom konnte nicht gestartet werden.": "无法启动 3D 展厅。", "ZOLLER  ·  PRODUKTUMGEBUNG 3D  ·  ": "ZOLLER  ·  3D 产品世界  ·  ", "Produktseite": "产品页面", "Über 2500 Werkzeugaufnahmen": "超过 2500 种刀柄", "Optional mit »idChip«": "可选配 »idChip«", "Kompatibel zu ZOLLER TMS": "兼容 ZOLLER TMS", "Tooling-Shop auf myzoller.com": "myzoller.com 上的刀柄商店", "Übersicht Werkzeugaufnahmen": "刀柄总览", "ZOLLER Tooling Solutions: Werkzeugaufnahmen für alle gängigen Schnittstellen – optional mit »idChip« für mehr Prozesssicherheit durch aktuelle Werkzeugdaten. Kompatibel zu ZOLLER TMS Tool Management Solutions.": "ZOLLER Tooling Solutions：适用于所有常见接口的刀柄 – 可选配 »idChip«，凭借实时刀具数据提高工艺可靠性。兼容 ZOLLER TMS Tool Management Solutions。", "Land und Sprache wählen": "选择国家和语言", "Showroom und Produktlinks wechseln zur ZOLLER Webseite des gewählten Landes.": "展厅和产品链接将切换到所选国家的 ZOLLER 网站。"};window.ZBASE="../";</script>
+  <script type="module" src="../assets/js/main.js?v=e190af527d"></script>
+</body>
+</html>
