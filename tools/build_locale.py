@@ -101,6 +101,7 @@ class Locale:
         self.pages, self.de2loc, self.loc2de = {}, {}, {}
         for f in sorted((folder / "pages").glob("*.json")):
             p = json.loads(f.read_text(encoding="utf-8"))
+            p["path"] = web_names.rename_path(loc["src"], p["path"])   # …/titanium -> …/titan
             self.pages[p["path"]] = p
             if p.get("de_path"):
                 self.de2loc.setdefault(p["de_path"], p["path"])
@@ -112,6 +113,10 @@ class Locale:
         for rep_file in [f / "replace.json" for f in [folder] + overlay]:
             if rep_file.exists():
                 self.reps.update(json.loads(rep_file.read_text(encoding="utf-8")))
+        corr_file = folder / "corrections.json"   # Korrektorat der Länderseite (ganze Texte, wie auf der Webseite)
+        self.corr = json.loads(corr_file.read_text(encoding="utf-8")) if corr_file.exists() else {}
+        rules_file = folder / "corrections_rules.json"   # Fachbegriffe, greifen auch in zusammengesetzten Texten
+        self.rules = json.loads(rules_file.read_text(encoding="utf-8")) if rules_file.exists() else []
         self.nav = json.loads((folder / "nav.json").read_text(encoding="utf-8"))
         self.files = [SRC / site["out"], SRC / "docs"]   # gespiegelte Dateien der Länderseite, sonst der deutschen
         self.copied = {}
@@ -125,7 +130,13 @@ class Locale:
         s = self.tr.get(s.strip(), s)
         for a, b in self.reps.items():
             s = s.replace(a, b)
-        return web_names.fix(s, self.lang)
+        s = web_names.fix(s, self.lang)
+        c = self.corr.get(s.strip())
+        if c is not None and s.strip():
+            return s.replace(s.strip(), c)
+        for a, b in self.rules:
+            s = s.replace(a, b)
+        return s
 
     def ui(self, s):
         return UI[self.lang].get(s, s)
@@ -135,7 +146,7 @@ class Locale:
         href = html.unescape(href or "").split("#")[0].split("?")[0].rstrip("/")
         if href.startswith(self.prefix + "/"):
             href = href[len(self.prefix):]
-        return href
+        return web_names.rename_path(self.loc["src"], href)
 
     def page(self, de_path):
         lp = self.de2loc.get(de_path)
