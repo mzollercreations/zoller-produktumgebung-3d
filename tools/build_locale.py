@@ -177,6 +177,7 @@ class Locale:
         s = self.tr.get(s.strip(), s)
         for a, b in self.reps.items():
             s = s.replace(a, b)
+        s = web_names.drop_alternatives(s)   # »basculante|orientable« -> »basculante«, wie auf der Länderseite
         s = web_names.fix(s, self.lang)
         c = self.corr.get(s.strip())
         if c is not None and s.strip():
