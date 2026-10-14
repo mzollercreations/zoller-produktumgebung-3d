@@ -31,6 +31,8 @@ UI = json.loads((ROOT / "tools" / "i18n.json").read_text(encoding="utf-8"))
 sys.path.insert(0, str(SRC / "tools"))
 import flags as web_flags  # noqa: E402  Flaggen der Länderseiten
 import i18n as web_i18n  # noqa: E402  feste Texte der Webseite (u. a. Unterkategorien)
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import ar  # noqa: E402  AR-/3D-Ansicht (Modelle und Texte der Webseite)
 import names as web_names  # noqa: E402  Produktnamen der maschinellen Übersetzung (»titanium« -> »titan«)
 
 # Schaltflächen und Teaser, die nicht in die Produkttexte gehören (alle Sprachen)
@@ -415,15 +417,18 @@ class Locale:
             name = nv.get("label") or (clean_name(self.t(self.pages[lp]["title"])) if lp else c["name"])
             categories.append(dict(c, name=name, text=cat_text.get(c["id"]) or web_i18n.T.get(self.lang, {}).get(c["text"], c["text"]),
                                    url=self.web_de(f"/produkte/{c['id']}") or self.base_url, subs=[sub_name(s) for s in c["subs"]]))
-        return {"generated_from": f"zoller-webseite/content/sites/{self.loc['src']}", "site": self.base_url,
+        data = {"generated_from": f"zoller-webseite/content/sites/{self.loc['src']}", "site": self.base_url,
                 "contact": self.web_de("/unternehmen/kontakt") or self.base_url,
                 "categories": categories, "toolTypes": [tool_name(t) for t in de_data["toolTypes"]], "products": products}
+        ar.patch(data, self.lang, self.loc["code"], ar.PLANER + self.dir + "/")   # AR-/3D-Ansicht (tools/ar.py)
+        return data
 
     def index_html(self):
         s = (DOCS / "index.html").read_text(encoding="utf-8")
         s = s.replace('<html lang="de">', f'<html lang="{self.loc["code"]}">')
         s = re.sub(r'(href|src)="assets/', r'\1="../assets/', s)
         s = s.replace('"./assets/vendor/', '"../assets/vendor/')
+        s = s.replace('"./assets/js/', '"../assets/js/')     # Import-Map (ar.js)
         s = s.replace("https://mzollercreations.github.io/zoller-webseite/produkte/", self.web_de("/produkte") or self.base_url)
         s = s.replace("https://mzollercreations.github.io/zoller-webseite/", self.base_url)
         texts = UI.get(self.lang, {})
@@ -460,8 +465,10 @@ def lang_menu(page, code, base):
 def with_version(page):
     """?v=… an app.css und main.js hängen (Prüfsumme der Oberfläche), damit Browser keine alte Fassung aus dem Cache nehmen."""
     js = DOCS / "assets" / "js"
-    ver = hashlib.sha1(b"".join(p.read_bytes() for p in (DOCS / "assets" / "css" / "app.css", js / "main.js", js / "world.js"))).hexdigest()[:10]
-    return re.sub(r'(assets/(?:css/app\.css|js/main\.js))(\?v=\w+)?"', rf'\1?v={ver}"', page)
+    ver = hashlib.sha1(b"".join(p.read_bytes() for p in (DOCS / "assets" / "css" / "app.css", js / "main.js", js / "world.js", js / "ar.js"))).hexdigest()[:10]
+    page = re.sub(r'(assets/(?:css/app\.css|js/main\.js))(\?v=\w+)?"', rf'\1?v={ver}"', page)
+    # Module, die main.js importiert (ar.js): Version über die Import-Map
+    return re.sub(r'("\./assets/js/ar\.js": "\./assets/js/ar\.js)(\?v=\w+)?"', rf'\1?v={ver}"', page)
 
 
 def main():

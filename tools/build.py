@@ -12,6 +12,7 @@ Ergebnis:
     docs/img/hd/<id>.webp     dasselbe in hoher Auflösung (1024 px), lädt bei Fokus
     docs/img/g/…              Bilder für das Detail-Panel (Header, Galerie, Modelle)
     docs/img/wall/<cat>.webp  Rückwand-Motive der Themenwelten
+    docs/ar/<id>.glb|.usdz    CAD-Modelle für AR/3D (tools/ar.py, aus der Webseite)
 
 Benötigt Pillow (``pip install pillow``).
 """
@@ -549,5 +550,9 @@ for cid, name, wall in CATEGORIES:
 
 data = {"generated_from": "https://www.zoller.info/produkte", "site": WEB + "/", "categories": categories,
         "toolTypes": tool_types, "products": products}
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import ar  # noqa: E402  AR-/3D-Ansicht: CAD-Modelle und Texte der Webseite (tools/ar.py)
+ar.sync_assets()
+ar.patch(data)
 (OUT / "data" / "products.json").write_text(json.dumps(data, ensure_ascii=False, separators=(",", ":")))
 print(f"\n{len(products)} Produkte in {len(categories)} Kategorien, {len(copied)} Panel-Bilder kopiert.")

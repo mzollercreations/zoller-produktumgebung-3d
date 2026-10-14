@@ -33,7 +33,8 @@ Darstellung je nach Produktart: freigestellte Geräte auf Bodenplatten, Tischger
 - **Suche** über Namen, Kategorien, Modelle und Werkzeugtypen
 - **Werkzeugtyp-Filter** (wie auf zoller.info): passende Geräte leuchten in der Halle
 - **Lageplan** mit Kameraposition, klickbar
-- **Deep-Links**: `#produkt/venturion`, `#themenwelt/automation`
+- **AR-/3D-Ansicht** für alle Produkte mit offiziellen CAD-Daten (»venturion« 450/600/800, »smile«, »keeper«, »toolOrganizer«, »toolStation«, »zidCode«, »powerShrink 400«, »redomatic 600«, »toolBalancer 550«): Karte »In AR ansehen« im Detail-Panel, Marke »3D · AR« im Produktbild, »AR« in Liste, Suche und Tooltip. iPhone/iPad starten AR Quick Look direkt (Banner »Jetzt anfragen« → Kontakt), Android Scene Viewer bzw. WebXR; am Rechner öffnet ein Dialog mit drehbarem CAD-Modell, Maßlinien, Modellauswahl und QR-Code fürs Handy. Der QR-Code-Link `#ar/<produkt>/<modell>` zeigt sofort die AR-Ansicht, die Halle baut sich erst danach auf.
+- **Deep-Links**: `#produkt/venturion`, `#themenwelt/automation`, `#ar/venturion/venturion800`
 - Handy-Layout mit Bottom-Sheet, Fallback-Liste ohne WebGL, Tastatursteuerung (`?` zeigt alle Kürzel)
 
 ## Aufbau
@@ -47,6 +48,20 @@ Darstellung je nach Produktart: freigestellte Geräte auf Bodenplatten, Tischger
 | `docs/assets/js/world.js` | Three.js-Szene: Layout, Architektur, Exponate, Kamera, Begehen |
 | `docs/assets/js/main.js` | Oberfläche: Themenwelten, Suche, Filter, Panel, Lageplan, Rundgang |
 | `tools/build.py` | Extrahiert Texte und Bilder aus dem Projekt `zoller-webseite` |
+| `docs/assets/js/ar.js` | AR-/3D-Dialog (model-viewer lädt erst beim Öffnen), Quick Look / Scene Viewer |
+| `docs/ar/` | CAD-Modelle `<id>.glb` (3D, Android) + `<id>.usdz` (iPhone/iPad) + Vorschaubild – Kopie aus `zoller-webseite/assets/ar` |
+| `tools/ar.py` | Kopiert Modelle und Bibliotheken aus der Webseite, ergänzt `products.json` um `ar` (Maße, Texte je Sprache) |
+
+## AR-Modelle aktualisieren
+
+Modelle, Maße (`content/ar_models.json`), Gerätenamen und alle Texte (`content/ar.json`, 19 Sprachvarianten) kommen aus der Webseite – dort erzeugt `tools/ar_models.py` die Dateien. Danach hier:
+
+```bash
+python3 tools/ar.py            # Modelle + model-viewer/Draco/QR kopieren, deutsche products.json ergänzen
+python3 tools/build_locale.py  # Sprachfassungen (ruft ar.patch je Fassung auf)
+```
+
+Welches Produkt welche Modelle zeigt, steht in `content/ar.json` → `pages` (deutscher Produktpfad). `ar.js` wird über die Import-Map in `index.html` versioniert (`build_locale.py` → `with_version`).
 
 ## Lokal starten
 

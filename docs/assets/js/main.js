@@ -1,5 +1,6 @@
 /* ZOLLER Produktumgebung 3D – Oberfläche: Themenwelten, Suche, Filter,
-   Produkt-Panel, Lageplan, Rundgang, Begehen, Deep-Links */
+   Produkt-Panel, Lageplan, Rundgang, Begehen, AR-/3D-Ansicht, Deep-Links */
+import { createAR, ICON_AR } from './ar.js';
 
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
@@ -34,11 +35,24 @@ products.forEach((p) => {
   p._name = norm(p.name);
 });
 const thumb = (p) => (p.kind === 'package' ? null : `${BASE}img/p/${p.id}.webp`);
+const arTag = (p) => (p.ar ? ' <i class="ar-tag" aria-hidden="true">AR</i>' : '');
 $('#stats').textContent = `${products.length} ${tr('Produkte')} · ${categories.length} ${tr('Themenwelten')}`;
 
 /* ------------------------------------------------------------------ Zustand */
 const state = { selected: null, activeCat: null, openCat: null, tool: '', walk: false, tour: null };
 let world = null;
+
+/* ------------------------------------------------------------------ AR-/3D-Ansicht (ar.js) */
+// Produkte mit CAD-Modell (product.ar): auf Handy/Tablet direkt in AR, am Rechner Dialog mit 3D-Modell und QR-Code.
+// Solange der Dialog offen ist, pausiert die Halle (GPU frei für das CAD-Modell).
+const arView = data.ar ? createAR({
+  data, byId, base: BASE, tr, esc, contact: data.contact || `${SITE}unternehmen/kontakt/`,
+  onOpen: (pid, mid) => { world?.setRunning(false); stopTour(); setHash(`ar/${pid}/${mid}`); },
+  onClose: (pid) => {
+    if (bootLater) { setHash(`produkt/${pid}`); const go = bootLater; bootLater = null; go(); return; }   // Halle erst jetzt aufbauen, dann zum Produkt
+    world?.setRunning(true); setHash(state.selected ? `produkt/${state.selected}` : '');
+  },
+}) : null;
 
 /* ------------------------------------------------------------------ Themenwelten-Dock */
 const dockList = $('#dock-list');
@@ -46,7 +60,7 @@ dockList.innerHTML = categories.map((c, i) => {
   const items = products.filter((p) => p.cat === c.id);
   const subs = c.subs.map((s) => {
     const its = items.filter((p) => p.sub === s);
-    return `<li class="cat__sub">${esc(s)}</li>` + its.map((p) => `<li><button type="button" class="cat__item" data-id="${p.id}">${thumb(p) ? `<img src="${thumb(p)}" alt="" loading="lazy">` : '<img alt="" src="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 34 26%22%3E%3Ccircle cx=%2217%22 cy=%2213%22 r=%2211%22 fill=%22%23f0e600%22/%3E%3C/svg%3E">'}<span>${esc(p.name)}</span></button></li>`).join('');
+    return `<li class="cat__sub">${esc(s)}</li>` + its.map((p) => `<li><button type="button" class="cat__item" data-id="${p.id}">${thumb(p) ? `<img src="${thumb(p)}" alt="" loading="lazy">` : '<img alt="" src="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 34 26%22%3E%3Ccircle cx=%2217%22 cy=%2213%22 r=%2211%22 fill=%22%23f0e600%22/%3E%3C/svg%3E">'}<span>${esc(p.name)}${arTag(p)}</span></button></li>`).join('');
   }).join('');
   return `<li class="cat" data-cat="${c.id}">
     <button type="button" class="cat__btn" aria-expanded="false"><span class="cat__num">${pad2(i + 1)}</span><span class="cat__name">${esc(c.name)}</span><span class="cat__count">${c.count}</span></button>
@@ -113,7 +127,7 @@ function runSearch() {
   }).filter(Boolean).sort((a, b) => b.s - a.s || orderIndex.get(a.p.id) - orderIndex.get(b.p.id)).slice(0, 9);
   resultIds = scored.map((x) => x.p.id); resultIdx = scored.length ? 0 : -1;
   results.innerHTML = scored.length ? scored.map(({ p }, i) => `<li role="option" data-id="${p.id}" aria-selected="${i === 0}">
-      ${thumb(p) ? `<img src="${thumb(p)}" alt="">` : '<img alt="">'}<div><div class="r-name">${esc(p.name)}</div><div class="r-meta">${esc(catById.get(p.cat).name)} · ${esc(p.sub)}</div></div></li>`).join('')
+      ${thumb(p) ? `<img src="${thumb(p)}" alt="">` : '<img alt="">'}<div><div class="r-name">${esc(p.name)}${arTag(p)}</div><div class="r-meta">${esc(catById.get(p.cat).name)} · ${esc(p.sub)}</div></div></li>`).join('')
     : `<li class="r-empty">${tr('Kein Produkt gefunden')}</li>`;
   results.hidden = false; search.setAttribute('aria-expanded', 'true');
 }
@@ -164,7 +178,8 @@ function productHTML(p) {
   const c = catById.get(p.cat);
   const hero = p.kind === 'package'
     ? `<div class="p-hero is-package"><div class="p-pkg" style="background:${{ STARTER: '#fff', BRONZE: 'linear-gradient(135deg,#f1c39b,#a8673a)', SILVER: 'linear-gradient(135deg,#fafbfc,#a7aeb5)', GOLD: 'linear-gradient(135deg,#fff3a6,#cfa92c)' }[p.tier]}"><div><small>TMS</small><span>${esc(p.tier)}</span><small>${tr('Softwarepaket')}</small></div></div></div>`
-    : `<div class="p-hero"><img src="${esc(BASE + (p.header || `img/hd/${p.id}.webp`))}" alt=""${esc(p.name.replace(/­/g, ''))}" decoding="async"></div>`;
+    : `<div class="p-hero"><img src="${esc(BASE + (p.header || `img/hd/${p.id}.webp`))}" alt=""${esc(p.name.replace(/­/g, ''))}" decoding="async">${p.ar && arView ? `<button type="button" class="p-arbadge" data-act="ar3d" title="${esc(arView.label)}">${ICON_AR}<span>3D · AR</span></button>` : ''}</div>`;
+  const arCard = p.ar && arView ? `<button type="button" class="p-ar" data-act="ar">${ICON_AR}<span><b>${esc(arView.label)}</b><small>${esc(arView.summary(p))}</small></span><svg class="p-ar__go" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button>` : '';
   const intro = (p.intro || []).filter((t) => t && t !== p.claim).map((t) => `<p>${esc(t)}</p>`).join('');
   const hl = p.highlights?.length ? `<ul class="p-hl">${p.highlights.map((h) => `<li>${esc(h)}</li>`).join('')}</ul>` : '';
   const cta = `<div class="p-cta">
@@ -196,7 +211,7 @@ function productHTML(p) {
       ${p.claim ? `<p class="p-claim">${esc(p.claim)}</p>` : ''}
     </div>
     <div class="p-body">${p.teaser && p.teaser !== p.claim ? `<p>${esc(p.teaser)}</p>` : ''}${intro}${hl}</div>
-    ${cta}${tools}${also}
+    ${arCard}${cta}${tools}${also}
     <div class="p-acc">${acc.map(([t, n, body, open]) => `<details class="acc"${open ? ' open' : ''}><summary>${esc(t)}${n ? `<small>${esc(n)}</small>` : ''}</summary><div class="acc__body">${body}</div></details>`).join('')}</div>
     <p class="p-source">${tr('Alle Details auf der Produktseite:')} <a href="${esc(p.url)}">${esc(p.name.replace(/\u00ad/g, ''))}</a></p>`;
 }
@@ -232,6 +247,8 @@ panelBody.addEventListener('click', (e) => {
   const tool = e.target.closest('[data-tool]');
   if (tool) { setTool(tool.dataset.tool); return; }
   const act = e.target.closest('[data-act]');
+  if (act?.dataset.act === 'ar' && state.selected) { arView?.start(state.selected); return; }
+  if (act?.dataset.act === 'ar3d' && state.selected) { arView?.open(state.selected); return; }
   if (act?.dataset.act === 'show' && state.selected) { world?.focus(state.selected); if (isPhone()) closePanel({ keepSelection: true }); return; }
   if (act?.dataset.act === 'copy') {
     const url = `${location.origin}${location.pathname}#produkt/${state.selected}`;
@@ -377,6 +394,7 @@ window.addEventListener('keydown', (e) => {
   if (e.target instanceof Element && e.target.closest('input, select, textarea')) return;
   if (e.metaKey || e.ctrlKey || e.altKey) return;
   const k = e.key;
+  if (arView?.isOpen) { if (k === 'Escape') arView.close(); return; }
   if (k === 'Escape') {
     const lb = $('.lightbox'); if (lb) { lb.remove(); return; }
     if (!$('#help').hidden) { toggleHelp(false); return; }
@@ -435,7 +453,7 @@ function showTooltip(id, pt, sec) {
   if ((!id && !sec) || !pt || state.walk && !id) { tooltip.classList.remove('is-on'); return; }
   if (id) {
     const p = byId.get(id);
-    tooltip.innerHTML = `<b>${esc(p.name)}</b><span>${esc(p.claim || p.teaser || p.sub)}</span><em>${id === state.selected ? tr('Ausgewählt') : tr('Klicken für Details')}</em>`;
+    tooltip.innerHTML = `<b>${esc(p.name)}${arTag(p)}</b><span>${esc(p.claim || p.teaser || p.sub)}</span><em>${id === state.selected ? tr('Ausgewählt') : tr('Klicken für Details')}</em>`;
   } else {
     const c = catById.get(sec);
     tooltip.innerHTML = `<b>${pad2(c.index + 1)} ${esc(c.name)}</b><span>${esc(c.text)}</span><em>${tr('Themenwelt ansteuern')}</em>`;
@@ -524,7 +542,7 @@ function showFallback(reason) {
   $('#btn-tour').hidden = true; $('#btn-walk').hidden = true;
   const fb = $('#fallback');
   fb.hidden = false;
-  fb.innerHTML = `<p class="fallback__note">${esc(reason)} ${tr('Hier sind alle Produkte als Übersicht – ein Klick öffnet die Details.')}</p>` + categories.map((c, i) => `<h2><span>${pad2(i + 1)}</span>${esc(c.name)}</h2><div class="fallback__grid">${ordered.filter((p) => p.cat === c.id).map((p) => `<button type="button" data-id="${p.id}">${thumb(p) ? `<img src="${thumb(p)}" alt="" loading="lazy">` : ''}<b>${esc(p.name)}</b><span>${esc(p.claim || p.sub)}</span></button>`).join('')}</div>`).join('');
+  fb.innerHTML = `<p class="fallback__note">${esc(reason)} ${tr('Hier sind alle Produkte als Übersicht – ein Klick öffnet die Details.')}</p>` + categories.map((c, i) => `<h2><span>${pad2(i + 1)}</span>${esc(c.name)}</h2><div class="fallback__grid">${ordered.filter((p) => p.cat === c.id).map((p) => `<button type="button" data-id="${p.id}">${thumb(p) ? `<img src="${thumb(p)}" alt="" loading="lazy">` : ''}<b>${esc(p.name)}${arTag(p)}</b><span>${esc(p.claim || p.sub)}</span></button>`).join('')}</div>`).join('');
   fb.addEventListener('click', (e) => { const b = e.target.closest('[data-id]'); if (b) selectProduct(b.dataset.id); });
 }
 
@@ -576,6 +594,7 @@ async function boot() {
   window.addEventListener('resize', sizeMinimap);
   app.classList.remove('is-loading');
   world.start();
+  if (arView?.isOpen) world.setRunning(false);
   updateInset();
 
   world.on('limit', (kind) => showToast(LIMIT_TEXT[kind] || LIMIT_TEXT.pan));
@@ -584,6 +603,8 @@ async function boot() {
   // Deep-Link
   const route = (delay) => {
     const h = decodeURIComponent(location.hash.slice(1));
+    const ar = arRoute(h);
+    if (ar) { setTimeout(() => { selectProduct(ar[0]); arView.open(ar[0], ar[1]); }, arView.isOpen ? 0 : delay); return; }
     if (h.startsWith('produkt/') && byId.has(h.slice(8))) setTimeout(() => selectProduct(h.slice(8)), delay);
     else if (h.startsWith('themenwelt/') && catById.has(h.slice(11))) setTimeout(() => goSector(h.slice(11)), delay);
   };
@@ -591,7 +612,19 @@ async function boot() {
   window.addEventListener('hashchange', () => route(0));
 }
 
-boot().catch((err) => {
-  console.error(err);
-  showFallback(tr('Der 3D-Showroom konnte nicht gestartet werden.'));
-});
+// #ar/<produkt>/<modell> (QR-Code der AR-Ansicht): Dialog sofort öffnen; die Halle baut sich erst auf, wenn er
+// geschlossen wird – so gehören Netz und GPU des Handys ganz dem CAD-Modell
+function arRoute(h) {
+  const m = /^ar\/([\w-]+)(?:\/([\w-]+))?$/.exec(h);
+  return m && arView?.has(m[1]) ? [m[1], m[2]] : null;
+}
+function start() {
+  boot().catch((err) => {
+    console.error(err);
+    showFallback(tr('Der 3D-Showroom konnte nicht gestartet werden.'));
+  });
+}
+let bootLater = null;
+const arFirst = arRoute(decodeURIComponent(location.hash.slice(1)));
+if (arFirst && arView.open(arFirst[0], arFirst[1])) bootLater = start;
+else start();
